@@ -50,8 +50,9 @@ view model =
                 input [value model.input, onInput Input] [],
                 button [disabled (String.length model.input < 1)] [text "Submit"] 
             ],
-            Html.form [onSubmit Del] [button [] [text "Delete"]],
-            div [] (List.map viewItem model.items)]
+            div [] (List.map viewItem model.items), 
+            button [onClick Del] [text "Delete"]
+    ]
 
 viewItem item = div [] [
     input [
