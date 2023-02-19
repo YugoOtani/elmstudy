@@ -12,21 +12,15 @@ main =
         , update = update
         , view = view
         }
-
-
-type alias Model = {
-    input : String,
-    items : List {
-        check : Bool,
-        cont : String
-    } }
-
+type alias Item = String
+type alias Box = {check : Bool, item : Item }
+type alias Model = {input : String, boxs : List Box }
 
 init : Model
 init = 
     {
         input = "",
-        items = []
+        boxs = []
     }
 
 type Msg = Input String | Submit | Check String | Del
@@ -34,14 +28,9 @@ type Msg = Input String | Submit | Check String | Del
 update : Msg -> Model -> Model
 update msg model = case msg of
     Input s -> { model |  input = s}
-    Submit -> {input = "", items = {check = False, cont = model.input}::model.items}
-    Check s -> { 
-                input = model.input,
-                items = List.map (\l -> {
-                    cont = l.cont, 
-                    check = if s==l.cont then not l.check else l.check
-                }) model.items }
-    Del -> {input = model.input, items = List.filter (\itm -> not itm.check) model.items}
+    Submit -> {input = "", boxs = (newBox model.input) :: model.boxs}
+    Check s -> { model | boxs = List.map (\b -> if s == b.item then checkBox b else b)  model.boxs }
+    Del -> {input = model.input, boxs = List.filter (\bx -> not bx.check) model.boxs}
 
 view : Model -> Html Msg
 view model =
@@ -50,13 +39,19 @@ view model =
                 input [value model.input, onInput Input] [],
                 button [disabled (String.length model.input < 1)] [text "Submit"] 
             ],
-            div [] (List.map viewItem model.items), 
+            div [] (List.map viewBox model.boxs), 
             button [onClick Del] [text "Delete"]
     ]
 
-viewItem item = div [] [
+viewBox box = div [] [
     input [
         type_ "checkbox", 
-        onClick (Check item.cont), 
-        checked item.check ] [],
-    text item.cont]
+        onClick (Check box.item), 
+        checked box.check ] [],
+    text box.item]
+
+newBox : Item -> Box
+newBox itm = {check = False, item = itm}
+
+checkBox : Box -> Box
+checkBox bx = {bx | check = not bx.check}
