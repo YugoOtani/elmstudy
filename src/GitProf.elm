@@ -5,8 +5,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
-import Json.Decode exposing (string)
-import Json.Decode.Pipeline exposing (required)
+import Json.Decode as D
+import Json.Decode.Pipeline as P
 
 
 main =
@@ -18,6 +18,11 @@ main =
         }
 type alias Model = {input : String, result : String}
 type Msg = Search | GotRepo (Result Http.Error String) | Input String
+type alias User = 
+    { login : String
+    ,avator : String
+    ,prof : String
+    }   
 
 init : () -> (Model, Cmd Msg)
 init _ = ({input = "", result = ""}, Cmd.none)
@@ -27,25 +32,28 @@ update msg model =
     case msg of 
         Search -> (model, Http.get{
             url = "http://api.github.com/users/" ++ model.input
-            , expect = Http.expectString GotRepo
+            , expect = Http.expectString GotRepo --use expectJson
             })
         Input s -> ({model | input = s},Cmd.none)
         GotRepo (Ok repo) -> ({model | result = repo}, Cmd.none)
-        GotRepo (Err err) -> ({model | result = "no such user in github"}, Cmd.none)
+        GotRepo (Err err) -> ({model | result = ""}, Cmd.none)
 
 view : Model -> Html Msg
-view model = div []
-    [
-    Html.form [onSubmit Search] 
-            [
-                input 
-                [
-                    value model.input, 
-                    onInput Input,
-                    placeholder "github name"
-                ] [],
-                button [disabled (String.length model.input < 1)] [text "Search"] 
-            ]
-    ,p [] [text model.result]
+view model = div [] 
+    [Html.form [onSubmit Search] [viewInput model, viewButton model]
+    ,p [] (viewResult model) 
     ]
-
+viewInput model = input [value model.input
+                        ,onInput Input
+                        ,placeholder "github name"] []
+viewButton model = button [disabled (String.length model.input < 1)] [text "Search"]
+viewResult model = case model.result of
+                    "" -> [text "no such user"]
+                    s  -> case D.decodeString decodeUser s of
+                            Ok(usr) -> [text (Debug.toString usr)]
+                            Err(er) -> [text (Debug.toString er)]
+decodeUser : D.Decoder User
+decodeUser = D.succeed User 
+        |> P.required "login" D.string
+        |> P.required "avatar_url" D.string
+        |> P.required "html_url" D.string
