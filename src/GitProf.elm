@@ -31,14 +31,19 @@ update msg model =
             })
         Input s -> ({model | input = s},Cmd.none)
         GotRepo (Ok repo) -> ({model | result = repo}, Cmd.none)
-        GotRepo (Err err) -> ({model | result = Debug.toString err}, Cmd.none)
+        GotRepo (Err err) -> ({model | result = "no such user in github"}, Cmd.none)
 
 view : Model -> Html Msg
 view model = div []
     [
     Html.form [onSubmit Search] 
             [
-                input [value model.input, onInput Input] [],
+                input 
+                [
+                    value model.input, 
+                    onInput Input,
+                    placeholder "github name"
+                ] [],
                 button [disabled (String.length model.input < 1)] [text "Search"] 
             ]
     ,p [] [text model.result]
