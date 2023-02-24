@@ -1,4 +1,4 @@
-module GetJsonFromHttp exposing (..)
+module A exposing (..)
 
 import Browser
 import Html exposing (..)
