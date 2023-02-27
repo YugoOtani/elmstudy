@@ -44,12 +44,17 @@ update msg model =
 view : Model -> Html Msg
 view model = div [] 
     [Html.form [onSubmit Search] [viewInput model, viewButton model]
-    ,p [] [text (Debug.toString model.usr)]
+    ,viewUser model.usr
     ]
 viewInput model = input [value model.input
                         ,onInput Input
                         ,placeholder "github name"] []
 viewButton model = button [disabled (String.length model.input < 1)] [text "Search"]
+
+viewUser usr = div [] [
+    p [] [img [src usr.avator, width 200] []]
+    ,a [href usr.prof] [text usr.login]
+    ]
 
 decodeUser : D.Decoder User
 decodeUser = D.succeed User 
