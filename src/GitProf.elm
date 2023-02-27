@@ -16,45 +16,51 @@ main =
         , view = view
         , subscriptions = \_ -> Sub.none
         }
-type alias Model = {input : String, usr : User}
+type alias Model = {input : String, usr : User, state : State}
 type Msg = Search | GotRepo (Result Http.Error User) | Input String
 type alias User = 
     { login : String
     ,avator : String
     ,prof : String
-    }   
+    }  
+type State = NotFound | Loading | ShowUser | NoInput | SomeInput
 emptyUser = { login = ""
             ,avator = ""
             ,prof   = ""
             }
 init : () -> (Model, Cmd Msg)
-init _ = ({input = "", usr = emptyUser}, Cmd.none)
+init _ = ({input = "", usr = emptyUser, state = NoInput}, Cmd.none)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = 
     case msg of 
-        Search -> (model, Http.get{
+        Search -> ({model | state = Loading}, Http.get{
             url = "http://api.github.com/users/" ++ model.input
             , expect = Http.expectJson GotRepo decodeUser
             })
-        Input s -> ({model | input = s},Cmd.none)
-        GotRepo (Ok repo) -> ({model | usr = repo}, Cmd.none)
-        GotRepo (Err err) -> ({model | usr = emptyUser}, Cmd.none)
+        Input s -> ({model | input = s, state = if s=="" then NoInput else SomeInput},Cmd.none)
+        GotRepo (Ok repo) -> ({model | usr = repo, state = ShowUser}, Cmd.none)
+        GotRepo (Err err) -> ({model | usr = emptyUser, state = NotFound}, Cmd.none)
 
 view : Model -> Html Msg
 view model = div [] 
     [Html.form [onSubmit Search] [viewInput model, viewButton model]
-    ,viewUser model.usr
+    ,viewUser model.usr model.state
     ]
 viewInput model = input [value model.input
                         ,onInput Input
                         ,placeholder "github name"] []
 viewButton model = button [disabled (String.length model.input < 1)] [text "Search"]
 
-viewUser usr = div [] [
-    p [] [img [src usr.avator, width 200] []]
-    ,a [href usr.prof] [text usr.login]
-    ]
+viewUser usr state = case state of
+            NotFound -> text "no such user"
+            Loading  -> text "loading ... "
+            NoInput  -> text "usage : input github username in textbox and press search"
+            SomeInput -> text "press search to show user"
+            ShowUser -> div [] [
+                            p [] [img [src usr.avator, width 200] []]
+                            ,a [href usr.prof] [text usr.login]
+                        ]
 
 decodeUser : D.Decoder User
 decodeUser = D.succeed User 
