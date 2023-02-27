@@ -19,12 +19,12 @@ main =
 type alias Model = {input : String, usr : User, state : State}
 type Msg = Search | GotRepo (Result Http.Error User) | Input String
 type alias User = 
-    { login : String
+    { name : String
     ,avator : String
     ,prof : String
     }  
 type State = NotFound | Loading | ShowUser | NoInput | SomeInput
-emptyUser = { login = ""
+emptyUser = { name = ""
             ,avator = ""
             ,prof   = ""
             }
@@ -59,7 +59,7 @@ viewUser usr state = case state of
             SomeInput -> text "press search to show user"
             ShowUser -> div [] [
                             p [] [img [src usr.avator, width 200] []]
-                            ,a [href usr.prof] [text usr.login]
+                            ,a [href usr.prof] [text usr.name]
                         ]
 
 decodeUser : D.Decoder User
